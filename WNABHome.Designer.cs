@@ -98,6 +98,7 @@
             label21 = new Label();
             cb_All = new CheckBox();
             comb_Selection = new ComboBox();
+            lbl_Weeks = new Label();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)num_PrimeCredit).BeginInit();
             ((System.ComponentModel.ISupportInitialize)num_PrimeBalance).BeginInit();
@@ -346,6 +347,7 @@
             // 
             // panel3
             // 
+            panel3.Controls.Add(lbl_Weeks);
             panel3.Controls.Add(dt_EstimateDate);
             panel3.Controls.Add(groupBox1);
             panel3.Controls.Add(btn_EstimateRefresh);
@@ -897,6 +899,15 @@
             comb_Selection.TabIndex = 2;
             comb_Selection.SelectedIndexChanged += comb_Selection_SelectedIndexChanged;
             // 
+            // lbl_Weeks
+            // 
+            lbl_Weeks.AutoSize = true;
+            lbl_Weeks.Location = new Point(20, 6);
+            lbl_Weeks.Name = "lbl_Weeks";
+            lbl_Weeks.Size = new Size(83, 20);
+            lbl_Weeks.TabIndex = 51;
+            lbl_Weeks.Text = "Weeks Left:";
+            // 
             // WNABHome
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -1013,5 +1024,6 @@
         private DateTimePicker dt_EstimateDate;
         private Label label23;
         private NumericUpDown num_BaltoDate;
+        private Label lbl_Weeks;
     }
 }

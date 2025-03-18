@@ -368,6 +368,7 @@ namespace Accounting
             int estMonth = estimateDate.Month;
             int estWeek = GetIso8601WeekOfYear(estimateDate);
             decimal weeksLeft = 52 - estWeek+1;
+            lbl_Weeks.Text = "Weeks Left: " + weeksLeft.ToString();
             decimal monthsLeft = 12 - estMonth + 1;
             DateTime yearStart = new DateTime(estYear, 1, 1);
             List<DataEntry> validEntries = db.DataEntrys.Where(e => e.Date.Year == estYear && e.Date < estimateDate).ToList();
@@ -393,44 +394,44 @@ namespace Accounting
                 return (amount, (onceIn +yearIncome + weeklyIncome * weeksLeft + monthlyIncome * monthsLeft),  (onceExp +yearExpenses + weeklyExpenses * weeksLeft + monthlyExpenses * monthsLeft));
             }
 
-            IEnumerable<decimal> yearPaidExpense = from de in validEntries
+            IEnumerable<decimal> yearPaidExpense = (from de in validEntries
                                                    join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                                                    where ev.range == EstimateRange.Yearly && ev.Expense == true
-                                                   select de.Amount;
-            IEnumerable<decimal> oncePaidExpense = from de in validEntries
+                                                   select new { de.Amount, de.EntryId }).DistinctBy(x => x.EntryId).Select(x => x.Amount).ToList();
+            IEnumerable<decimal> oncePaidExpense = (from de in validEntries
                                                    join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                                                    where ev.range == EstimateRange.Once && ev.Expense == true && ev.CreationDate.Year == estYear
-                                                   select de.Amount;
+                                                   select new { de.Amount, de.EntryId }).AsEnumerable().DistinctBy(x => x.EntryId).Select(x => x.Amount).ToList();
 
-            IEnumerable<decimal> monthPaidExpense = from de in db.DataEntrys
+            IEnumerable<decimal> monthPaidExpense = (from de in db.DataEntrys
                                                     join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                                                     where de.Date.Year == estYear && de.Date.Month == estMonth
                                                     && ev.range == EstimateRange.Monthly && ev.Expense == true
-                                                    select de.Amount;
+                                                    select new { de.Amount, de.EntryId }).AsEnumerable().DistinctBy(x => x.EntryId).Select(x => x.Amount).ToList();
 
-            var b=  from de in db.DataEntrys
+            var c=  from de in db.DataEntrys
                    join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                    where de.Date.Year == estYear && de.Date.Month == estMonth
                    && ev.range == EstimateRange.Monthly && ev.Expense == true 
                    select  new { de.Amount, de.Date};
 
-            IEnumerable<decimal> yearPaidIncome = from de in validEntries
-                                                  join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
-                                                  where ev.range == EstimateRange.Yearly && ev.Expense == false
-                                                  select de.Amount;
-            IEnumerable<decimal> oncePaidIncome = from de in validEntries
+            IEnumerable<decimal> yearPaidIncome = (from de in validEntries
+                                                   join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
+                                                   where ev.range == EstimateRange.Yearly && ev.Expense == false
+                                                   select new { de.Amount, de.EntryId }).DistinctBy(x=> x.EntryId).Select(x=>x.Amount).ToList();
+            IEnumerable<decimal> oncePaidIncome = (from de in validEntries
                                                   join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                                                   where ev.range == EstimateRange.Once && ev.Expense == false && ev.CreationDate.Year == estYear
-                                                  select de.Amount;
+                                                  select new { de.Amount, de.EntryId }).DistinctBy(x => x.EntryId).Select(x => x.Amount).ToList();
 
-            IEnumerable<decimal> monthPaidIncome = from de in db.DataEntrys
+            IEnumerable<decimal> monthPaidIncome = (from de in db.DataEntrys
                                                    join ev in db.EstimateValues on de.TagID equals ev.AsscosiatedTagId
                                                    where de.Date.Year == estYear && de.Date.Month == estMonth
                                                    && ev.range == EstimateRange.Monthly && ev.Expense == false
-                                                   select de.Amount;
-            decimal yearIn = yearIncome - yearPaidIncome.Sum() - oncePaidIncome.Sum();
+                                                   select new { de.Amount, de.EntryId }).AsEnumerable().DistinctBy(x => x.EntryId).Select(x => x.Amount).ToList();
+            decimal yearIn = yearIncome - yearPaidIncome.Sum() - oncePaidIncome.Sum()+ onceIn;
             decimal monthIn = monthlyIncome * (monthsLeft-1) + (monthlyIncome - monthPaidIncome.Sum());
-            decimal yearEx = yearExpenses + yearPaidExpense.Sum() + oncePaidExpense.Sum();
+            decimal yearEx = yearExpenses + yearPaidExpense.Sum() + oncePaidExpense.Sum() + onceExp;
             decimal monthEx = monthlyExpenses * (monthsLeft - 1) + (monthlyExpenses - monthPaidExpense.Sum());
             return (amount, (yearIn + weeklyIncome * weeksLeft + monthIn), (yearEx + weeklyExpenses * weeksLeft + monthEx));
         }
